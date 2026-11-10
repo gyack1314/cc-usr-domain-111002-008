@@ -1,0 +1,14 @@
+const $=(s,root=document)=>root.querySelector(s);
+const $$=(s,root=document)=>[...root.querySelectorAll(s)];
+const data=await fetch('/data.json').then(r=>r.json());
+const runtime=()=>fetch('/api/runtime').then(r=>r.json());
+const action=(name,fields={})=>fetch('/api/action',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name,...fields})}).then(r=>r.json());
+const tick=()=>new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)));
+const html=(value)=>String(value).replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('"','&quot;');
+const show=(s)=>{$('#status').textContent=s;};
+
+let target='start',month=11;const times=Array.from({length:24*60},(_,n)=>`${String(Math.floor(n/60)).padStart(2,'0')}:${String(n%60).padStart(2,'0')}`);for(const select of [$('#start-time'),$('#end-time')])select.innerHTML=times.map(t=>`<option>${t}</option>`).join('');$('#start-time').value='01:00';$('#end-time').value='01:02';
+function calendar(){$('#month').textContent=`2026-${String(month).padStart(2,'0')}`;const last=new Date(Date.UTC(2026,month,0)).getUTCDate();$('#days').innerHTML=Array.from({length:last},(_,i)=>`<button data-day="${i+1}">${i+1}</button>`).join('');for(const button of $$('[data-day]'))button.onclick=()=>{$('#'+target+'-date').value=`2026-${String(month).padStart(2,'0')}-${String(button.dataset.day).padStart(2,'0')}`;$('#calendar').close();};}
+for(const button of $$('[data-open-date]'))button.onclick=()=>{target=button.dataset.openDate;calendar();$('#calendar').showModal();};$('#prev').onclick=()=>{month--;if(month<1)month=1;calendar();};$('#next').onclick=()=>{month++;if(month>12)month=12;calendar();};$('#close-calendar').onclick=()=>$('#calendar').close();
+function absolute(prefix){const day=$('#'+prefix+'-date').value;const time=$('#'+prefix+'-time').value;const hour=Number(time.slice(0,2));let offset=5;if(day<'2026-03-08'||day>'2026-11-01')offset=5;else if(day==='2026-03-08'){if(hour===2)throw Error('当地时间不存在');offset=hour<2?5:4;}else if(day==='2026-11-01')offset=hour<1?4:hour===1?($('#'+prefix+'-fold').value==='0'?4:5):5;else offset=4;return Date.parse(day+'T'+time+':00Z')+offset*3600000;}
+$('#query').onclick=async()=>{try{const start=absolute('start'),end=absolute('end');if($('#start-date').value!==$('#end-date').value)throw Error('单次查询只能一个当地自然日');if(end<start)throw Error('终点早于起点');const signature=new Date(start).toISOString()+'|'+new Date(end).toISOString();$('#utc-summary').textContent=signature;await tick();$('#results').dataset.signature=signature;$('#results').innerHTML=Array.from({length:Math.min(1500,(end-start)/60000+1)},(_,i)=>{const utc=new Date(start+i*60000).toISOString();return `<p data-record-id="M-${start/60000+i}" data-utc="${utc}">${utc}</p>`;}).join('');await action('query',{signature});show('查询完成，包含两个端点');}catch(error){show(error.message);$('#results').innerHTML='';}};show('请选择日期与偏移');

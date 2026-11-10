@@ -1,0 +1,7 @@
+{
+  "timezone": "America/New_York",
+  "supported_year": 2026,
+  "precision": "minute",
+  "range": "同一当地日且双端包含；2026年3月8日不存在02点，11月1日01点有两种offset",
+  "input": "日期input只读，通过日期格和偏移选项操作"
+}

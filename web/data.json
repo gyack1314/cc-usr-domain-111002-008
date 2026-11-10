@@ -1,0 +1,6 @@
+{
+  "portal_timezone": "America/New_York",
+  "supported_year": 2026,
+  "record_precision": "minute",
+  "inclusive_end": true
+}
